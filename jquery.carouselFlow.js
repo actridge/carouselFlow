@@ -1,192 +1,176 @@
 /**
  * CarouselFlow - jQuery plugin to navigate images in a hybrid carousel/coverflow style widget.
- * @requires jQuery v1.3.2 or above
+ * @requires jQuery v1.4.2 or above
  *
- * http://actridge.com/projects/carouselFlow
+ * http://actridge.com/projects/carouselflow
  *
  * Copyright (c) 2010 Vance Lucas (vancelucas.com)
  * Released under the MIT license:
  * http://www.opensource.org/licenses/mit-license.php
  */
-/**
- * Based on the great work by:
- * 
- * jCarouselLite - jQuery plugin to navigate images/any content in a carousel style widget.
- * @requires jQuery v1.2 or above
- *
- * http://gmarwaha.com/jquery/jcarousellite/
- *
- * Copyright (c) 2007 Ganeshji Marwaha (gmarwaha.com)
- * Dual licensed under the MIT and GPL licenses:
- * http://www.opensource.org/licenses/mit-license.php
- * http://www.gnu.org/licenses/gpl.html
- */
 (function($) {
-$.fn.carouselFlow = function(o) {
-    var o = $.extend({
-        btnPrev: null,
-        btnNext: null,
-        btnGo: null,
-        mouseWheel: false,
-        auto: null,
-
-        speed: 200,
-        easing: null,
-
-        vertical: false,
-        circular: true,
-        visible: 5,
-        start: 0,
-        scroll: 1,
-        
-        width: 'auto',
-
-        beforeStart: null,
-        afterEnd: null
-    }, o || {});
-
-    return this.each(function() {                           // Returns the element collection. Chainable.
-
-        var running = false, animCss=o.vertical?"top":"left", sizeCss=o.vertical?"height":"width";
-        var div = $(this), ul = $("ul", div), tLi = $("li", ul), tl = tLi.size(), v = o.visible;
-
-        if(o.circular) {
-            ul.prepend(tLi.slice(tl-v-1+1).clone())
-              .append(tLi.slice(0,v).clone());
-            o.start += v;
-        }
-
-        var li = $("li", ul), itemLength = li.size(), curr = o.start;
-        div.css("visibility", "visible");
-
-        li.css({overflow: "hidden", float: o.vertical ? "none" : "left"});
-        ul.css({margin: "0", padding: "0", position: "relative", "list-style-type": "none", "z-index": "1"});
-        div.css({overflow: "hidden", position: "relative", "z-index": "2", left: "0px"});
-
-        var liSize = o.vertical ? height(li) : width(li);   // Full li size(incl margin)-Used for animation
-        var ulSize = liSize * itemLength;                   // size of full ul(total length, not just for the visible items)
-        if(o.width == 'auto') {
-        	var divSize = liSize * v;                           // size of entire div(total length for just the visible items)
-        } else {
-        	var divSize = o.width;
-        }
-
-        li.css({width: li.width(), height: li.height()});
-        ul.css(sizeCss, ulSize+"px").css(animCss, -(curr*liSize));
-
-        div.css(sizeCss, divSize+"px");                     // Width of the DIV. length of visible images
-
-        if(o.btnPrev)
-            $(o.btnPrev).click(function() {
-                return go(curr-o.scroll);
-            });
-
-        if(o.btnNext)
-            $(o.btnNext).click(function() {
-                return go(curr+o.scroll);
-            });
-
-        if(o.btnGo)
-            $.each(o.btnGo, function(i, val) {
-                $(val).click(function() {
-                    return go(o.circular ? o.visible+i : i);
-                });
-            });
-
-        if(o.mouseWheel && div.mousewheel)
-            div.mousewheel(function(e, d) {
-                return d>0 ? go(curr-o.scroll) : go(curr+o.scroll);
-            });
-
-        if(o.auto)
-            setInterval(function() {
-                go(curr+o.scroll);
-            }, o.auto+o.speed);
-
-        function vis() {
-            return li.slice(curr).slice(0,v);
-        };
-
-        function go(to) {
-            if(!running) {
-
-                if(o.beforeStart) {
-                    o.beforeStart.call(this, vis());
-                }
-                
-                //*
-                console.log(li);
-                // Animate sizes - center one 100%, left and right flank and reduce sizes in 10% steps (by default)
-				itemSizeEach = v
-                li.each(function() {
-                	var itemSizeMulti = tl-v;
-	                $(this).animate({
-	                	'width': itemSizeMulti*100+'px',
-	                	'height': itemSizeMulti*100+'px'
-	                }, o.speed, o.easing, function() {});
-                });
-                //*/
-
-                if(o.circular) {            // If circular we are in first or last, then goto the other end
-                    if(to<=o.start-v-1) {           // If first, then goto last
-                        ul.css(animCss, -((itemLength-(v*2))*liSize)+"px");
-                        // If "scroll" > 1, then the "to" might not be equal to the condition; it can be lesser depending on the number of elements.
-                        curr = to==o.start-v-1 ? itemLength-(v*2)-1 : itemLength-(v*2)-o.scroll;
-                    } else if(to>=itemLength-v+1) { // If last, then goto first
-                        ul.css(animCss, -( (v) * liSize ) + "px" );
-                        // If "scroll" > 1, then the "to" might not be equal to the condition; it can be greater depending on the number of elements.
-                        curr = to==itemLength-v+1 ? v+1 : v+o.scroll;
-                    } else curr = to;
-                } else {                    // If non-circular and to points to first or last, we just return.
-                    if(to<0 || to>itemLength-v) return;
-                    else curr = to;
-                }                           // If neither overrides it, the curr will still be "to" and we can proceed.
-
-                running = true;
-
-                ul.animate(
-                    animCss == "left" ? { left: -(curr*liSize) } : { top: -(curr*liSize) } , o.speed, o.easing,
-                    function() {
-                        if(o.afterEnd)
-                            o.afterEnd.call(this, vis());
-                        running = false;
-                    }
-                );
-                // Disable buttons when the carousel reaches the last/first, and enable when not
-                if(!o.circular) {
-                    $(o.btnPrev + "," + o.btnNext).removeClass("disabled");
-                    $( (curr-o.scroll<0 && o.btnPrev)
-                        ||
-                       (curr+o.scroll > itemLength-v && o.btnNext)
-                        ||
-                       []
-                     ).addClass("disabled");
-                }
+	$.fn.carouselFlow = function(o) {
+		// Default settings
+		var o = $.extend({
+			btnPrevSelector: null,
+			btnNextSelector: null,
+			
+			visible: 5,
+			speed: 500,
+			easing: 'linear'
+		}, o || {});
+		
+		// Return so call is chainable
+		return this.each(function() {
+			var cfDiv = $(this);
+			var cfUl = $('ul', cfDiv);
+			var cfLi = $('li', cfUl);
+			
+			// ==============================================
+			// Make some calculations
+			var cfLiWidth = cfLi.outerWidth();
+			var cfLiHeight = cfLi.outerHeight();
+			var eLiWidth = $(':first', cfLi).width();
+			var eLiHeight = cfLi.height();
+			// Get center element
+			var cfLiCenter = Math.floor(cfLi.length / 2);
+			var cfUlCenter = Math.ceil(cfUl.width() / 2);
+			
+			// Move the last item before first item, just in case user click prev button
+			$('li:first', cfUl).before($('li:last', cfUl));
+			
+			// CSS positioning and setup
+			cfDiv.css({'position': 'relative'});
+			cfUl.css({'position': 'relative', 'overflow': 'hidden', 'list-style-type': 'none',
+				'width': '100%',
+				'height': cfLiHeight + 'px'});
+			cfLi.css({'overflow': 'hidden', 'position': 'absolute', 'display': 'block'});
+			
+			// Main object with functions
+			var cf = {
+				// Visible elements on either side of center element
+				visibleLis: function(center) {
+					var center = center || cfLiCenter;
+					return $('li', cfUl).slice(Math.floor(o.visible-center)).slice(0, center+1);
+				},
 				
-				/*
-				alert(
-					'Total: ' + tl + '\n' +
-					'Current: ' + curr + '\n' +
-					'Start: ' + o.start + '\n' +
-					'Visible: ' + v + '\n' +
-					'Length: ' + itemLength + '\n' +
-					'DIV Size: ' + divSize + '\n'
-					);
-				*/
-            }
-            return false;
-        };
-    });
-};
-
-function css(el, prop) {
-    return parseInt($.css(el[0], prop)) || 0;
-};
-function width(el) {
-    return  el[0].offsetWidth + css(el, 'marginLeft') + css(el, 'marginRight');
-};
-function height(el) {
-    return el[0].offsetHeight + css(el, 'marginTop') + css(el, 'marginBottom');
-};
-
+				cloneLi: function(dir) {
+					if(dir == 'next') {
+						// Clone the first item and put it as last item
+						$('li:last', cfUl).after($('li:first', cfUl));
+					} else if(dir == 'prev') {
+						// Clone the last item and put it as first item
+						$('li:first', cfUl).before($('li:last', cfUl));
+					}
+				},
+				
+				// Slide carousel to index position as center
+				slideTo: function(index, animate) {
+					var index = index || cfLiCenter;
+					var animate = animate || true;
+					var dir = false;
+					
+					// Determine direction
+					if(index < cfLiCenter) {
+						dir = 'prev';
+					} else if(index > cfLiCenter) {
+						dir = 'next';
+					} else {
+						//var dir = false;
+					}
+					
+					if(dir !== false) {
+						// Clone list item
+						cf.cloneLi(dir);
+					}
+					
+					// Animation sequence
+					// ============================================
+					$('li', cfUl).each(function(i, value) {
+						//var eLiWidth, eLiHeight;
+						
+						// Size ratio == 100% for center or -{o.stepping}% for each 'step' away from center
+						var eLiStep = cfLiCenter - i;
+						var eLiStepAbs = Math.abs(eLiStep);
+						var eLiSizeRatio = (i == cfLiCenter) ? 100 : (100 - (eLiStep * o.stepping));
+						var eLiSizeRatioAbs = (i == cfLiCenter) ? 100 : (100 - (eLiStepAbs * o.stepping));
+						var eLi = $(this);
+						
+						/*
+						// Width - ensure original is stored
+						if(!eLi.data('oWidth')) {
+							eLiWidth = eLi.data('oWidth', eLi.width());
+						}
+						eLiWidth = eLi.data('oWidth');
+						// Height - ensure original is stored
+						if(!eLi.data('oHeight')) {
+							eLiHeight = eLi.data('oHeight', eLi.height());
+						}
+						eLiHeight = eLi.data('oHeight');
+						*/
+						
+						// CSS property setup
+						var eLiCss = {
+							'width': parseInt(eLiWidth*(eLiSizeRatioAbs/100), 10)+'px',
+							'height': parseInt(eLiHeight*(eLiSizeRatioAbs/100), 10)+'px',
+							'top': parseInt((eLiHeight - eLiHeight*(eLiSizeRatioAbs/100))/2, 10)+'px'
+						};
+						
+						// Calculate left position (needs to be after final width is calculated)
+						eLiCss.left = parseInt(cfUlCenter + cfUlCenter*((100 - eLiSizeRatio)/100) - (eLiCss.width.replace('px', '')/2), 10)+'px';
+						
+						// Set CSS properties on carousel items
+						// Only IMG supported for now
+						// @todo Add support for any content
+						eLi.css({'zIndex': Math.floor(eLiSizeRatioAbs / 10)})
+						if(animate) {
+							eLi.find('img').andSelf().animate(eLiCss, o.speed, o.easing);
+						} else {
+							eLi.find('img').andSelf().css(eLiCss);
+						}
+						
+						/*
+						console.log('Step['+i+']: ' + eLiStep + ' -- Ratio: ' + eLiSizeRatio +
+							' -- Width: ' + eLiCss.width +
+							' -- Height: ' + eLiCss.height + 
+							' -- Left: ' + eLiCss.left + 
+							' -- Top: ' + eLiCss.top + 
+							' -- zIndex: ' + Math.floor(eLiSizeRatioAbs / 10)
+							);
+						//*/
+					});
+					/*
+					console.log('Center: ' + cfUlCenter);
+					console.log('Min. Width: ' + Array.min(elsWidths));
+					*/
+					// ============================================
+				}
+			};
+			
+			// START the process
+			cf.slideTo(cfLiCenter, false);
+			
+			// PREVIOUS
+			$(o.btnPrevSelector).click(function() {
+				cf.slideTo(cfLiCenter-1);
+				return false;
+			});
+			
+			// NEXT
+			$(o.btnNextSelector).click(function() {
+				cf.slideTo(cfLiCenter+1);
+				return false;
+			});
+			// ==============================================
+		});
+	};
 })(jQuery);
+
+// Extending the 'Array' type with prototype methods
+// @link http://ejohn.org/blog/fast-javascript-maxmin/
+Array.max = function( array ){
+    return Math.max.apply( Math, array );
+};
+Array.min = function( array ){
+    return Math.min.apply( Math, array );
+};
