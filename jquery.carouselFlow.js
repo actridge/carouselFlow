@@ -2,7 +2,7 @@
  * CarouselFlow - jQuery plugin to navigate images in a hybrid carousel/coverflow style widget.
  * @requires jQuery v1.4.2 or above
  *
- * http://actridge.com/projects/carouselflow
+ * http://github.com/actridge/carouselFlow
  *
  * Copyright (c) 2010 Vance Lucas (vancelucas.com)
  * Released under the MIT license:
@@ -96,19 +96,6 @@
 						var eLiSizeRatioAbs = (i == cfLiCenter) ? 100 : (100 - (eLiStepAbs * o.stepping));
 						var eLi = $(this);
 						
-						/*
-						// Width - ensure original is stored
-						if(!eLi.data('oWidth')) {
-							eLiWidth = eLi.data('oWidth', eLi.width());
-						}
-						eLiWidth = eLi.data('oWidth');
-						// Height - ensure original is stored
-						if(!eLi.data('oHeight')) {
-							eLiHeight = eLi.data('oHeight', eLi.height());
-						}
-						eLiHeight = eLi.data('oHeight');
-						*/
-						
 						// CSS property setup
 						var eLiCss = {
 							'width': parseInt(eLiWidth*(eLiSizeRatioAbs/100), 10)+'px',
@@ -128,16 +115,6 @@
 						} else {
 							eLi.find('img').andSelf().css(eLiCss);
 						}
-						
-						/*
-						console.log('Step['+i+']: ' + eLiStep + ' -- Ratio: ' + eLiSizeRatio +
-							' -- Width: ' + eLiCss.width +
-							' -- Height: ' + eLiCss.height + 
-							' -- Left: ' + eLiCss.left + 
-							' -- Top: ' + eLiCss.top + 
-							' -- zIndex: ' + Math.floor(eLiSizeRatioAbs / 10)
-							);
-						//*/
 					});
 					/*
 					console.log('Center: ' + cfUlCenter);
@@ -161,16 +138,6 @@
 				cf.slideTo(cfLiCenter+1);
 				return false;
 			});
-			// ==============================================
 		});
 	};
 })(jQuery);
-
-// Extending the 'Array' type with prototype methods
-// @link http://ejohn.org/blog/fast-javascript-maxmin/
-Array.max = function( array ){
-    return Math.max.apply( Math, array );
-};
-Array.min = function( array ){
-    return Math.min.apply( Math, array );
-};
